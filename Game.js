@@ -1,14 +1,4 @@
-let wordArray = [
-  'cat',
-  'dog',
-  'king',
-  'sky',
-  'water',
-  'coffee',
-  'computer',
-  'java',
-  'react',
-];
+let wordArray = require('./Words');
 
 function shuffle(array) {
   return array.sort(() => Math.random() - 0.5);
@@ -17,6 +7,10 @@ function shuffle(array) {
 class Game {
   ADD_POINT = 100;
 
+  /**
+   * @param {string} id : Room Name 
+   * @param {array} players : game players array
+   */
   constructor(id, players) {
     this.roomName = id;
     this.guesser = '';

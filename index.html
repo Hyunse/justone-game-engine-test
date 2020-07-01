@@ -100,6 +100,8 @@
     <script>
       $(function() {
         const socket = io();
+
+        // Game state
         let game = {
           roomName: '',
           player: '',
@@ -110,10 +112,16 @@
           guesser: '',
         };
 
+        /**
+         * Refresh page
+         */
         $('body').bind('beforeunload',function(){
           socket.emit('reset game', {});
         });
-
+        
+        /**
+         * Join Room Button Click
+         */
         $('#join').on('click', function () {
           game.roomName = $('#roomName').val();
           game.player = $('#player').val();
@@ -123,6 +131,9 @@
           $('.enterence').hide();
         });
 
+        /**
+         * Click Enter Key Msg Input
+         */
         $('#msg').keypress(function(event) {
           if(event.keyCode === 13) {
 
@@ -138,7 +149,10 @@
             $('#msg').val('');
           }
         });
-
+        
+        /**
+         * Click Massage Send Button
+         */
         $('#send').on('click', function () {
           if(game.guesser === game.player) {
               game.answer = $('#msg').val();
@@ -152,24 +166,36 @@
             $('#msg').val('');
         });
 
+        /**
+         * Click Start Button
+         */
         $('#start').on('click', function () {
           game.start = true;
           socket.emit('game start', game);
 
         });
 
+        /**
+         * Click Next Button
+         */
         $('#nextBtn').on('click', function () {
           socket.emit('next game', game);
 
           $('#next-game-area').hide();
         });
 
+        /**
+         * Click Reset Button
+         */
         $('#reset').on('click', function () {
           socket.emit('reset game', {});
 
           $('.reset-area').hide();
         });
 
+        /**
+         * Listen socket 'answer'
+         */
         socket.on('answer', function ({ isCorrect, isLast, state }) {
           let text = 'Boooooooooooo';
           let point;
@@ -187,6 +213,9 @@
           }
         });
 
+        /**
+         * Listen socket 'new game'
+         */
         socket.on('new game', function (state) {
           game.point = state.point;
           game.guesser = state.guesser;
@@ -212,14 +241,21 @@
           $('.message-area').show();
         });
 
+        /**
+         * Listen socket 'ask end game'
+         */
         socket.on('ask end game', (state) => {
           $('#messages').append($('<li>').text('Try again?'));
         });
 
+        /**
+         * Listen socket 'chat message'
+         */
         socket.on('chat message', (msg) => {
           $('#messages').append($('<li>').text(msg));
         });
 
+        // Initialize area
         $('.message-area').hide();
         $('.next-game-area').hide();
         $('.game-start').hide();
