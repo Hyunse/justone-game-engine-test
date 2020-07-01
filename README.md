@@ -3,3 +3,11 @@
 - Express
 - Socket
 - JQuery
+
+# install
+
+```````
+ npm install
+
+ npm start
+```````
