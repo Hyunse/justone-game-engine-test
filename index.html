@@ -1,0 +1,230 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Socket</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font: 13px Helvetica, Arial;
+      }
+      .msg-box {
+        background: #000;
+        padding: 3px;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+      }
+      .msg-box input {
+        border: 0;
+        padding: 10px;
+        width: 90%;
+        margin-right: 0.5%;
+      }
+      .msg-box button {
+        width: 9%;
+        background: rgb(130, 224, 255);
+        border: none;
+        padding: 10px;
+      }
+      #messages {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+      #messages li {
+        padding: 5px 10px;
+      }
+      #messages li:nth-child(odd) {
+        background: #eee;
+      }
+      
+      .enterence, .game-start{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-top: 300px;
+      }
+
+      .next-game-area {
+        text-align: center;
+      }
+
+      .next-game-area > button {
+        width: 150px;
+        height: 150px;
+      }
+
+      .reset-area > button {
+        width: 150px;
+        height: 150px;
+      }
+
+      .enterence > button {
+        width: 50px;
+        height: 50px;
+        margin-top: 15px;
+      }
+
+      .game-start > button {
+        width: 150px;
+        height: 150px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="message-area">
+      <ul id="messages"></ul>
+      <div class="msg-box">
+        <input id="msg" autocomplete="off" /><button id="send">Send</button>
+      </div>
+    </div>
+    <div class="enterence">
+      <label for="roomName"> Room: <input type="text" id="roomName" /> </label>
+      <label for="player"> Player: <input type="text" id="player" /> </label>
+      <button id="join">Join</button>
+    </div>
+    <div class="game-start">
+      <button id="start">Game Start</button>
+    </div>
+    <div class="next-game-area">
+      <button id="nextBtn">Go To Next Round</button>
+    </div>
+    <div class="reset-area">Try again??? <button id="reset">Reset</div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+      $(function() {
+        const socket = io();
+        let game = {
+          roomName: '',
+          player: '',
+          msg: '',
+          start: false,
+          answer: '',
+          point: 0,
+          guesser: '',
+        };
+
+        $('body').bind('beforeunload',function(){
+          socket.emit('reset game', {});
+        });
+
+        $('#join').on('click', function () {
+          game.roomName = $('#roomName').val();
+          game.player = $('#player').val();
+          socket.emit('join room', game);
+
+          $('.game-start').show();
+          $('.enterence').hide();
+        });
+
+        $('#msg').keypress(function(event) {
+          if(event.keyCode === 13) {
+
+            if(game.guesser === game.player) {
+              game.answer = $('#msg').val();
+              socket.emit('answer', game);
+            
+            } else {
+              game.msg = $('#msg').val();
+              socket.emit('chat message', game);
+            }
+
+            $('#msg').val('');
+          }
+        });
+
+        $('#send').on('click', function () {
+          if(game.guesser === game.player) {
+              game.answer = $('#msg').val();
+              socket.emit('answer', game);
+            
+            } else {
+              game.msg = $('#msg').val();
+              socket.emit('chat message', game);
+            }
+
+            $('#msg').val('');
+        });
+
+        $('#start').on('click', function () {
+          game.start = true;
+          socket.emit('game start', game);
+
+        });
+
+        $('#nextBtn').on('click', function () {
+          socket.emit('next game', game);
+
+          $('#next-game-area').hide();
+        });
+
+        $('#reset').on('click', function () {
+          socket.emit('reset game', {});
+
+          $('.reset-area').hide();
+        });
+
+        socket.on('answer', function ({ isCorrect, isLast, state }) {
+          let text = 'Boooooooooooo';
+          let point;
+          if (isCorrect) {
+            text = 'Correct!!!!!';
+          }
+
+          $('#messages').append($('<li>').text(text));
+          $('.next-game-area').show();
+
+          if (isLast) {
+            $('#messages').append($('<li>').text(`Total Point: ${state.point}`));
+            $('.next-game-area').hide();
+            $('.reset-area').show();
+          }
+        });
+
+        socket.on('new game', function (state) {
+          game.point = state.point;
+          game.guesser = state.guesser;
+          game.round = state.round;
+
+          console.log(game);
+
+          $('#messages').text('');
+          $('.reset-area').hide();
+          $('.next-game-area').hide();
+
+          $('#messages').append($('<li>').text(`Round ${state.round+1}`));
+          
+          if (state.guesser !== game.player) {
+            $('#answer-area').hide();
+            $('#messages').append($('<li>').text(`Secret Word [ ${state.word} ]`));
+          } else {
+            $('#messages').append($('<li>').text(`You are a Guesser!!`));
+            $('#answer-area').show();
+          }
+
+          $('.game-start').hide();
+          $('.message-area').show();
+        });
+
+        socket.on('ask end game', (state) => {
+          $('#messages').append($('<li>').text('Try again?'));
+        });
+
+        socket.on('chat message', (msg) => {
+          $('#messages').append($('<li>').text(msg));
+        });
+
+        $('.message-area').hide();
+        $('.next-game-area').hide();
+        $('.game-start').hide();
+        $('.reset-area').hide();
+      });
+    </script>
+  </body>
+</html>
