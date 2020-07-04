@@ -85,7 +85,8 @@
     </div>
     <div class="enterence">
       <label for="roomName"> Room: <input type="text" id="roomName" /> </label>
-      <label for="player"> Player: <input type="text" id="player" /> </label>
+      <label for="player"> Player Email: <input type="text" id="playerEmail" /> </label>
+      <label for="player"> Player Name: <input type="text" id="playerName" /> </label>
       <button id="join">Join</button>
     </div>
     <div class="game-start">
@@ -93,6 +94,10 @@
     </div>
     <div class="next-game-area">
       <button id="nextBtn">Go To Next Round</button>
+    </div>
+    <div class="video-area">
+      <video id="localVideo" autoplay muted style="width:40%;"></video>
+      <video id="remoteVideo" autoplay style="width:40%;"></video>
     </div>
     <div class="reset-area">Try again??? <button id="reset">Reset</div>
     <script src="/socket.io/socket.io.js"></script>
@@ -104,11 +109,16 @@
         // Game state
         let game = {
           roomName: '',
-          player: '',
+          player: {
+            email: '',
+            name: '',
+            isGuesser: false,
+            isGiver: false,
+            point: 0,
+          },
           msg: '',
           start: false,
           answer: '',
-          point: 0,
           guesser: '',
         };
 
@@ -124,7 +134,8 @@
          */
         $('#join').on('click', function () {
           game.roomName = $('#roomName').val();
-          game.player = $('#player').val();
+          game.player.email = $('#playerEmail').val();
+          game.player.name = $('#playerName').val();
           socket.emit('join room', game);
 
           $('.game-start').show();
@@ -137,7 +148,7 @@
         $('#msg').keypress(function(event) {
           if(event.keyCode === 13) {
 
-            if(game.guesser === game.player) {
+            if(game.player.isGuesser) {
               game.answer = $('#msg').val();
               socket.emit('answer', game);
             
@@ -154,7 +165,7 @@
          * Click Massage Send Button
          */
         $('#send').on('click', function () {
-          if(game.guesser === game.player) {
+          if(game.player.isGuesser) {
               game.answer = $('#msg').val();
               socket.emit('answer', game);
             
@@ -203,11 +214,17 @@
             text = 'Correct!!!!!';
           }
 
+          state.players.map((player) => {
+            if(player.email === game.player.email) {
+              game.player = player;
+            }
+          });
+
           $('#messages').append($('<li>').text(text));
           $('.next-game-area').show();
 
           if (isLast) {
-            $('#messages').append($('<li>').text(`Total Point: ${state.point}`));
+            $('#messages').append($('<li>').text(`Total Point: ${game.player.point}`));
             $('.next-game-area').hide();
             $('.reset-area').show();
           }
@@ -216,12 +233,15 @@
         /**
          * Listen socket 'new game'
          */
-        socket.on('new game', function (state) {
-          game.point = state.point;
-          game.guesser = state.guesser;
+        socket.on('new game', function (state){
           game.round = state.round;
+          game.player.isGuesser = false;
 
-          console.log(game);
+          state.players.map((player) => {
+            if(player.email === game.player.email) {
+              game.player = player;
+            }
+          });
 
           $('#messages').text('');
           $('.reset-area').hide();
@@ -229,12 +249,10 @@
 
           $('#messages').append($('<li>').text(`Round ${state.round+1}`));
           
-          if (state.guesser !== game.player) {
-            $('#answer-area').hide();
+          if (!game.player.isGuesser) {
             $('#messages').append($('<li>').text(`Secret Word [ ${state.word} ]`));
           } else {
             $('#messages').append($('<li>').text(`You are a Guesser!!`));
-            $('#answer-area').show();
           }
 
           $('.game-start').hide();

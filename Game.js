@@ -1,25 +1,20 @@
-let wordArray = require('./Words');
-
-function shuffle(array) {
-  return array.sort(() => Math.random() - 0.5);
-}
+const wordArray = require('./Words');
 
 class Game {
-  ADD_POINT = 100;
+  GUESS_POINT = 200;
+  CLUE_POINT = 100;
+  MAX_ROUND = 8;
 
   /**
-   * @param {string} id : Room Name 
+   * @param {string} id : Room Name
    * @param {array} players : game players array
    */
   constructor(id, players) {
-    this.roomName = id;
-    this.guesser = '';
     this.word = '';
-    this.point = 0;
     this.round = 0;
     this.wordArray = [];
     this.players = players;
-    this.maxRound = players.length * 2;
+    this.maxRound = this.players.length * 2;
 
     this.initGame();
   }
@@ -29,35 +24,32 @@ class Game {
    */
   initGame() {
     // Get Array Data
-    this.wordArray = this.initWords(this.players);
-    this.guesser = this.players[0];
+    this.wordArray = this.initWords();
+    this.players[0].isGuesser = true;
     this.word = this.wordArray[0];
-    this.point = 0;
     this.round = 0;
   }
 
   /**
    * Get Words Array for game
-   * @param {array} players 
    */
-  initWords(players) {
-    // Determine Word Array length by players.length
-    let shuffledWords = shuffle(wordArray);
+  initWords() {
+    let shuffledWords = this.shuffle(wordArray);
 
-    return shuffledWords.slice(0, this.maxRound);
+    return shuffledWords.slice(0, this.MAX_ROUND);
   }
 
   /**
    * Check Guesser's Answer
-   * @param {string} answer 
+   * @param {string} answer
    */
   checkAnswer(answer) {
     const word = this.word;
     let correct = false;
 
     if (word === answer) {
-      this.point += this.ADD_POINT;
       correct = true;
+      this.givePoints();
     }
 
     return correct;
@@ -68,8 +60,9 @@ class Game {
    */
   nextRound() {
     this.round = this.round + 1;
-    this.guesser = this.getNextGuesser(this.round);
-    this.word = this.getNextWord(this.round);
+    this.initGuesser();
+    this.setNextGuesser(this.round);
+    this.setNextWord(this.round);
 
     return this.getState();
   }
@@ -79,37 +72,52 @@ class Game {
    */
   getState() {
     return {
-      roomName: this.roomName,
-      guesser: this.guesser,
       word: this.word,
-      point: this.point,
       round: this.round,
+      players: this.players,
     };
   }
 
   /**
    * Get Next Guesser
-   * @param {number} round 
+   * @param {number} nextRound
    */
-  getNextGuesser(round) {
-    const players = this.players;
-    let nextGuesser;
-
-    if (round >= players.length) {
-      nextGuesser = players[round - players.length];
+  setNextGuesser(nextRound) {
+    if (nextRound >= this.players.length) {
+      this.players[nextRound - this.players.length].isGuesser = true;
     } else {
-      nextGuesser = players[round];
+      this.players[nextRound].isGuesser = true;
     }
-
-    return nextGuesser;
   }
 
   /**
-   * Get Next Word
-   * @param {number} round 
+   * init Guesser to false for next round
    */
-  getNextWord(round) {
-    return this.wordArray[round];
+  initGuesser() {
+    this.players.map((player) => {
+      if (player.isGuesser) player.isGuesser = false;
+    });
+  }
+
+  /**
+   * Give Point when answer is correct
+   */
+  givePoints() {
+    this.players.map((player) => {
+      console.log(player);
+      // Guesser gets 200 points
+      if (player.isGuesser === true) player.addPoint(this.GUESS_POINT);
+
+      // Givers who gives not duplicated words get 100 points
+      if (player.isGiver === true) player.addPoint(this.CLUE_POINT);
+    });
+  }
+
+  /**
+   * Set Next Word
+   */
+  setNextWord(round) {
+    this.word = this.wordArray[round];
   }
 
   /**
@@ -117,6 +125,14 @@ class Game {
    */
   checkLastRound() {
     return this.round + 1 === this.maxRound ? true : false;
+  }
+
+  /**
+   * Shuffle Array
+   * @param {array} array
+   */
+  shuffle(array) {
+    return array.sort(() => Math.random() - 0.5);
   }
 }
 
