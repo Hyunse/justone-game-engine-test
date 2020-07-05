@@ -18,26 +18,25 @@ io.on('connection', (socket) => {
    */
   socket.on('join room', function ({ player, roomName }) {
     const newPlayer = new Player(player);
-    let players = rooms.get(roomName);
+    let players = rooms.get(roomName) || [];
     // Join
     socket.join(roomName);
 
-    console.log(`Name[ ${newPlayer.name} ] Email [${newPlayer.email}] Join Room [${roomName}]`);
+    console.log(
+      `Name[ ${newPlayer.name} ] Email [${newPlayer.email}] Join Room [${roomName}]`
+    );
 
-    if (players) {
-      rooms.set(roomName, [...players, newPlayer]);
-    } else {
-      rooms.set(roomName, [newPlayer]);
-    }
+    rooms.set(roomName, [...players, newPlayer]);
+    io.sockets.in(roomName).emit('wait', rooms.get(roomName));
   });
 
   /**
    * Chat Message
    */
-  socket.on('chat message', ({ roomName, msg, player }) => {
-    let players = rooms.get(roomName);
+  socket.on('chat message', ({ roomName, player }) => {
+    console.log(`Clue is ${player.msg} from ${player.name}`);
 
-    io.sockets.in(roomName).emit('chat message', msg);
+    io.sockets.in(roomName).emit('chat message', player);
   });
 
   /**
@@ -54,9 +53,22 @@ io.on('connection', (socket) => {
   /**
    * Get Answer
    */
-  socket.on('answer', ({ answer, roomName }) => {
+  socket.on('answer', ({ answer, roomName, clues }) => {
     let players = rooms.get(roomName);
     const isCorrect = game.checkAnswer(answer);
+    
+    // Answer is Correct
+    if (isCorrect) {
+      clues.map((player) => {
+        const email = player.email;
+
+        game.setGiver(email);
+      });
+
+      // Give Points
+      game.givePoints();
+    }
+
     const isLast = game.checkLastRound();
     const state = game.getState();
 
@@ -69,16 +81,14 @@ io.on('connection', (socket) => {
   socket.on('next game', ({ roomName, answer }) => {
     const state = game.nextRound();
 
-    console.log(state);
-
     io.sockets.in(roomName).emit('new game', state);
   });
 
-  socket.on('reset game', () => {
+  socket.on('reset game', ({ roomName }) => {
     game.initGame();
     const state = game.getState();
 
-    io.sockets.in(state.roomName).emit('new game', state);
+    io.sockets.in(roomName).emit('new game', state);
   });
 
   /**

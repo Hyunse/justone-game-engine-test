@@ -3,7 +3,6 @@ const wordArray = require('./Words');
 class Game {
   GUESS_POINT = 200;
   CLUE_POINT = 100;
-  MAX_ROUND = 8;
 
   /**
    * @param {string} id : Room Name
@@ -34,9 +33,17 @@ class Game {
    * Get Words Array for game
    */
   initWords() {
-    let shuffledWords = this.shuffle(wordArray);
-
-    return shuffledWords.slice(0, this.MAX_ROUND);
+    return this.shuffle(wordArray).slice(0, this.maxRound);
+  }
+  
+  /**
+   * init Players Roles
+   */
+  initPlayerRoles() {
+    this.players.map((player) => {
+       player.isGuesser = false;
+       player.isGiver = false;
+    });
   }
 
   /**
@@ -44,15 +51,7 @@ class Game {
    * @param {string} answer
    */
   checkAnswer(answer) {
-    const word = this.word;
-    let correct = false;
-
-    if (word === answer) {
-      correct = true;
-      this.givePoints();
-    }
-
-    return correct;
+    return this.word === answer ? true : false;
   }
 
   /**
@@ -60,7 +59,7 @@ class Game {
    */
   nextRound() {
     this.round = this.round + 1;
-    this.initGuesser();
+    this.initPlayerRoles();
     this.setNextGuesser(this.round);
     this.setNextWord(this.round);
 
@@ -91,15 +90,6 @@ class Game {
   }
 
   /**
-   * init Guesser to false for next round
-   */
-  initGuesser() {
-    this.players.map((player) => {
-      if (player.isGuesser) player.isGuesser = false;
-    });
-  }
-
-  /**
    * Give Point when answer is correct
    */
   givePoints() {
@@ -115,9 +105,20 @@ class Game {
 
   /**
    * Set Next Word
+   * @param {number} round
    */
   setNextWord(round) {
     this.word = this.wordArray[round];
+  }
+
+  /**
+   * Set clue giver
+   * @param {string} email
+   */
+  setGiver(email) {
+    this.players.map((player) => {
+      if (player.email === email) player.isGiver = true;
+    });
   }
 
   /**

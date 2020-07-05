@@ -42,7 +42,7 @@
         background: #eee;
       }
       
-      .enterence, .game-start{
+      .enterence {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -50,8 +50,20 @@
         margin-top: 300px;
       }
 
+      .game-start {
+        margin-top: 15px;
+      }
+
       .next-game-area {
         text-align: center;
+      }
+
+      .wait-players {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-top: 300px;
       }
 
       .next-game-area > button {
@@ -84,10 +96,14 @@
       </div>
     </div>
     <div class="enterence">
-      <label for="roomName"> Room: <input type="text" id="roomName" /> </label>
+      <label for="roomName"> Room: <input type="text" id="roomName" value="a" /> </label>
       <label for="player"> Player Email: <input type="text" id="playerEmail" /> </label>
       <label for="player"> Player Name: <input type="text" id="playerName" /> </label>
       <button id="join">Join</button>
+    </div>
+    <div class="wait-players">
+      <div>Waiting....</div>
+      <ul id="wait-list"></ul> 
     </div>
     <div class="game-start">
       <button id="start">Game Start</button>
@@ -115,8 +131,9 @@
             isGuesser: false,
             isGiver: false,
             point: 0,
+            msg: '',
           },
-          msg: '',
+          clues: [],
           start: false,
           answer: '',
           guesser: '',
@@ -138,7 +155,7 @@
           game.player.name = $('#playerName').val();
           socket.emit('join room', game);
 
-          $('.game-start').show();
+          $('.wait-players').show();
           $('.enterence').hide();
         });
 
@@ -150,10 +167,11 @@
 
             if(game.player.isGuesser) {
               game.answer = $('#msg').val();
+
               socket.emit('answer', game);
             
             } else {
-              game.msg = $('#msg').val();
+              game.player.msg = $('#msg').val();
               socket.emit('chat message', game);
             }
 
@@ -167,10 +185,11 @@
         $('#send').on('click', function () {
           if(game.player.isGuesser) {
               game.answer = $('#msg').val();
+
               socket.emit('answer', game);
             
             } else {
-              game.msg = $('#msg').val();
+              game.player.msg = $('#msg').val();
               socket.emit('chat message', game);
             }
 
@@ -181,6 +200,7 @@
          * Click Start Button
          */
         $('#start').on('click', function () {
+
           game.start = true;
           socket.emit('game start', game);
 
@@ -199,7 +219,7 @@
          * Click Reset Button
          */
         $('#reset').on('click', function () {
-          socket.emit('reset game', {});
+          socket.emit('reset game', game);
 
           $('.reset-area').hide();
         });
@@ -213,6 +233,10 @@
           if (isCorrect) {
             text = 'Correct!!!!!';
           }
+
+          console.log('Correct', isCorrect);
+          console.log('Last', isLast);
+          console.log('State', state);
 
           state.players.map((player) => {
             if(player.email === game.player.email) {
@@ -234,6 +258,7 @@
          * Listen socket 'new game'
          */
         socket.on('new game', function (state){
+          game.clues = [];
           game.round = state.round;
           game.player.isGuesser = false;
 
@@ -255,6 +280,7 @@
             $('#messages').append($('<li>').text(`You are a Guesser!!`));
           }
 
+          $('.wait-players').hide();
           $('.game-start').hide();
           $('.message-area').show();
         });
@@ -267,13 +293,48 @@
         });
 
         /**
+         * wait room
+         */
+        socket.on('wait', (players) => {
+          if(players.length === 4) {
+            $('.game-start').show();
+          }
+
+          $('#wait-list').html('');
+            players.map((player) => {
+              $('#wait-list').append($('<li>').text(`${player.name} is ready`));
+          });
+        });
+
+        /**
          * Listen socket 'chat message'
          */
-        socket.on('chat message', (msg) => {
-          $('#messages').append($('<li>').text(msg));
+        socket.on('chat message', (player) => {
+          game.clues.push(player);
+        
+          if(game.clues && game.clues.length === 3) {
+
+            game.clues = game.clues.filter((player, index, array) => {
+              let valid = true;
+
+              array.map((p) => {
+                p.email !== player.email && p.msg === player.msg ? valid = false : null;
+
+              });
+
+              return valid;
+            })
+
+            game.clues = game.clues.map((player) => {
+              $('#messages').append($('<li>').text(`${player.name}'s Clue : ${player.msg}`));
+
+              return player;
+            });
+          }
         });
 
         // Initialize area
+        $('.wait-players').hide();
         $('.message-area').hide();
         $('.next-game-area').hide();
         $('.game-start').hide();
