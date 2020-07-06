@@ -126,7 +126,7 @@
         let game = {
           roomName: '',
           player: {
-            email: '',
+            id: '',
             name: '',
             isGuesser: false,
             isGiver: false,
@@ -151,7 +151,7 @@
          */
         $('#join').on('click', function () {
           game.roomName = $('#roomName').val();
-          game.player.email = $('#playerEmail').val();
+          game.player.id = $('#playerEmail').val();
           game.player.name = $('#playerName').val();
           socket.emit('join room', game);
 
@@ -239,7 +239,7 @@
           console.log('State', state);
 
           state.players.map((player) => {
-            if(player.email === game.player.email) {
+            if(player.id === game.player.id) {
               game.player = player;
             }
           });
@@ -263,7 +263,7 @@
           game.player.isGuesser = false;
 
           state.players.map((player) => {
-            if(player.email === game.player.email) {
+            if(player.id === game.player.id) {
               game.player = player;
             }
           });
@@ -318,7 +318,7 @@
               let valid = true;
 
               array.map((p) => {
-                p.email !== player.email && p.msg === player.msg ? valid = false : null;
+                p.id !== player.id && p.msg === player.msg ? valid = false : null;
 
               });
 

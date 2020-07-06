@@ -1,6 +1,6 @@
 class Player {
   constructor(player) {
-    this.email = player.email;
+    this.id = player.id;
     this.name = player.name;
     this.point = 0;
     this.isGuesser = false;

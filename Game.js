@@ -5,10 +5,9 @@ class Game {
   CLUE_POINT = 100;
 
   /**
-   * @param {string} id : Room Name
    * @param {array} players : game players array
    */
-  constructor(id, players) {
+  constructor(players) {
     this.word = '';
     this.round = 0;
     this.wordArray = [];
@@ -94,7 +93,6 @@ class Game {
    */
   givePoints() {
     this.players.map((player) => {
-      console.log(player);
       // Guesser gets 200 points
       if (player.isGuesser === true) player.addPoint(this.GUESS_POINT);
 
@@ -113,11 +111,11 @@ class Game {
 
   /**
    * Set clue giver
-   * @param {string} email
+   * @param {string} id
    */
-  setGiver(email) {
+  setGiver(id) {
     this.players.map((player) => {
-      if (player.email === email) player.isGiver = true;
+      if (player.id === id) player.isGiver = true;
     });
   }
 

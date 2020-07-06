@@ -23,7 +23,7 @@ io.on('connection', (socket) => {
     socket.join(roomName);
 
     console.log(
-      `Name[ ${newPlayer.name} ] Email [${newPlayer.email}] Join Room [${roomName}]`
+      `Name[ ${newPlayer.name} ] Email [${newPlayer.id}] Join Room [${roomName}]`
     );
 
     rooms.set(roomName, [...players, newPlayer]);
@@ -60,9 +60,9 @@ io.on('connection', (socket) => {
     // Answer is Correct
     if (isCorrect) {
       clues.map((player) => {
-        const email = player.email;
+        const id = player.id;
 
-        game.setGiver(email);
+        game.setGiver(id);
       });
 
       // Give Points
