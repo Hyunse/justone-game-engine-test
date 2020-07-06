@@ -21,6 +21,7 @@ class Game {
    * Init & Restart Game
    */
   initGame() {
+    console.log(this.players)
     // Get Array Data
     this.wordArray = this.initWords();
     this.players[0].isGuesser = true;

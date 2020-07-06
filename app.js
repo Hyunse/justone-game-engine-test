@@ -17,7 +17,7 @@ io.on('connection', (socket) => {
    * Join Room
    */
   socket.on('join room', function ({ player, roomName }) {
-    const newPlayer = new Player(player);
+    const newPlayer = new Player(player.id, player.name);
     let players = rooms.get(roomName) || [];
     // Join
     socket.join(roomName);
@@ -45,7 +45,7 @@ io.on('connection', (socket) => {
   socket.on('game start', ({ roomName }) => {
     const players = rooms.get(roomName);
     // create Game Instance
-    game = new Game(roomName, players);
+    game = new Game(players);
 
     io.sockets.in(roomName).emit('new game', game.getState());
   });
