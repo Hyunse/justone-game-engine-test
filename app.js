@@ -1,10 +1,11 @@
 const app = require('express')();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
-let Game = require('./Game');
-const Player = require('./Player');
+let Game = require('./engine/Game');
+const Player = require('./engine/Player');
+const MatchManager = require('./engine/MatchManager')
 
-let rooms = new Map();
+const Match = new MatchManager();
 let game;
 
 app.get('/', (req, res) => {
@@ -18,16 +19,22 @@ io.on('connection', (socket) => {
    */
   socket.on('join room', function ({ player, roomName }) {
     const newPlayer = new Player(player.id, player.name);
-    let players = rooms.get(roomName) || [];
-    // Join
+
+    if(!Match.checkRoomExist(roomName)) {
+      Match.createRoom(roomName);
+    }
+
+    // Join Room
+    const gameState = Match.joinRoom(roomName, newPlayer);
+
     socket.join(roomName);
 
     console.log(
       `Name[ ${newPlayer.name} ] Email [${newPlayer.id}] Join Room [${roomName}]`
     );
 
-    rooms.set(roomName, [...players, newPlayer]);
-    io.sockets.in(roomName).emit('wait', rooms.get(roomName));
+    // go to wait room.
+    io.sockets.in(roomName).emit('wait', gameState);
   });
 
   /**
@@ -43,52 +50,37 @@ io.on('connection', (socket) => {
    * Game Start
    */
   socket.on('game start', ({ roomName }) => {
-    const players = rooms.get(roomName);
-    // create Game Instance
-    game = new Game(players);
+    const gameState = Match.startGame(roomName);
 
-    io.sockets.in(roomName).emit('new game', game.getState());
+    console.log('Game Start : ', gameState);
+
+    io.sockets.in(roomName).emit('new game', gameState);
   });
 
   /**
    * Get Answer
    */
   socket.on('answer', ({ answer, roomName, clues }) => {
-    let players = rooms.get(roomName);
-    const isCorrect = game.checkAnswer(answer);
+    const gameState = Match.endRound(roomName, answer, clues);
     
-    // Answer is Correct
-    if (isCorrect) {
-      clues.map((player) => {
-        const id = player.id;
+    console.log("End Round : ", gameState.state.players);
 
-        game.setGiver(id);
-      });
-
-      // Give Points
-      game.givePoints();
-    }
-
-    const isLast = game.checkLastRound();
-    const state = game.getState();
-
-    io.sockets.in(roomName).emit('answer', { isCorrect, isLast, state });
+    io.sockets.in(roomName).emit('answer', gameState);
   });
 
   /**
    * Next Game
    */
   socket.on('next game', ({ roomName, answer }) => {
-    const state = game.nextRound();
+    const gameState = Match.moveToNextRound(roomName);
 
-    io.sockets.in(roomName).emit('new game', state);
+    io.sockets.in(roomName).emit('new game', gameState);
   });
 
   socket.on('reset game', ({ roomName }) => {
-    game.initGame();
-    const state = game.getState();
+    const gameState = Match.startGame();
 
-    io.sockets.in(roomName).emit('new game', state);
+    io.sockets.in(roomName).emit('new game', gameState);
   });
 
   /**

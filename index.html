@@ -129,7 +129,6 @@
             id: '',
             name: '',
             isGuesser: false,
-            isGiver: false,
             point: 0,
             msg: '',
           },
@@ -227,7 +226,7 @@
         /**
          * Listen socket 'answer'
          */
-        socket.on('answer', function ({ isCorrect, isLast, state }) {
+        socket.on('answer', function ({ isCorrect, state }) {
           let text = 'Boooooooooooo';
           let point;
           if (isCorrect) {
@@ -235,7 +234,6 @@
           }
 
           console.log('Correct', isCorrect);
-          console.log('Last', isLast);
           console.log('State', state);
 
           state.players.map((player) => {
@@ -247,7 +245,7 @@
           $('#messages').append($('<li>').text(text));
           $('.next-game-area').show();
 
-          if (isLast) {
+          if (state.round === 7) {
             $('#messages').append($('<li>').text(`Total Point: ${game.player.point}`));
             $('.next-game-area').hide();
             $('.reset-area').show();
@@ -295,7 +293,7 @@
         /**
          * wait room
          */
-        socket.on('wait', (players) => {
+        socket.on('wait', ({ players }) => {
           if(players.length === 4) {
             $('.game-start').show();
           }
@@ -323,9 +321,7 @@
               });
 
               return valid;
-            })
-
-            game.clues = game.clues.map((player) => {
+            }).map((player) => {
               $('#messages').append($('<li>').text(`${player.name}'s Clue : ${player.msg}`));
 
               return player;
