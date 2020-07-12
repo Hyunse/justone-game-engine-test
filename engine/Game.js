@@ -16,10 +16,10 @@ class Game {
    * Init & Restart Game
    */
   initGame() {
+    this.initGuesser();
     this.round = 0;
     this.maxRound = this.players.length * 2;
     this.wordArray = this.initWords();
-    this.players[0].isGuesser = true;
     this.word = this.wordArray[0];
   }
 
@@ -28,6 +28,14 @@ class Game {
    */
   initWords() {
     return this.shuffle(wordArray).slice(0, this.maxRound);
+  }
+
+  initGuesser() {
+    this.players.map((player) => {
+      player.isGuesser = false;
+    });
+
+    this.players[0].isGuesser = true;
   }
 
   /**

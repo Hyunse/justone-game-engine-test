@@ -78,7 +78,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('reset game', ({ roomName }) => {
-    const gameState = Match.startGame();
+    const gameState = Match.startGame(roomName);
 
     io.sockets.in(roomName).emit('new game', gameState);
   });

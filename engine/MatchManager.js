@@ -7,13 +7,13 @@ class MatchManager {
     this.matchManager = new Map();
   }
 
-  createRoom(roomName) {
-    this.matchManager.set(roomName, new Game());
+  createRoom(gameId) {
+    this.matchManager.set(gameId, new Game());
   }
 
-  joinRoom(roomName, player) {
-    if (this.matchManager.has(roomName)) {
-      let game = this.matchManager.get(roomName);
+  joinRoom(gameId, player) {
+    if (this.matchManager.has(gameId)) {
+      const game = this.matchManager.get(gameId);
       const newPlayer = new Player(player.id, player.name);
 
       game.addPlayer(newPlayer);
@@ -24,10 +24,12 @@ class MatchManager {
     }
   }
 
-  startGame(roomName) {
-    if (this.matchManager.has(roomName)) {
-      let game = this.matchManager.get(roomName);
+  startGame(gameId) {
+    if (this.matchManager.has(gameId)) {
+      const game = this.matchManager.get(gameId);
       const numberOfPlayers = game.getNumberOfPlayers();
+
+      console.log(numberOfPlayers);
 
       if (numberOfPlayers === 4) {
         game.initGame();
@@ -39,9 +41,9 @@ class MatchManager {
     }
   }
 
-  endRound(roomName, answer, clues) {
-    if (this.matchManager.has(roomName)) {
-      let game = this.matchManager.get(roomName);
+  endRound(gameId, answer, clues) {
+    if (this.matchManager.has(gameId)) {
+      const game = this.matchManager.get(gameId);
       const correct = game.checkAnswer(answer);
 
       if (correct) {
@@ -57,9 +59,9 @@ class MatchManager {
     }
   }
 
-  moveToNextRound(roomName) {
-    if (this.matchManager.has(roomName)) {
-      let game = this.matchManager.get(roomName);
+  moveToNextRound(gameId) {
+    if (this.matchManager.has(gameId)) {
+      const game = this.matchManager.get(gameId);
 
       game.nextRound();
 
@@ -70,8 +72,8 @@ class MatchManager {
   }
 
   leavePlayer(player) {
-    if (this.matchManager.has(roomName)) {
-      let game = this.matchManager.get(roomName);
+    if (this.matchManager.has(gameId)) {
+      const game = this.matchManager.get(gameId);
 
       game.leavePlayer(player);
 
@@ -82,16 +84,16 @@ class MatchManager {
   }
 
   endGame() {
-    if (this.matchManager.has(roomName)) {
-      this.matchManager.delete(roomName);
+    if (this.matchManager.has(gameId)) {
+      this.matchManager.deconste(gameId);
       
     } else {
       throw new ClientError('', 'Room Not Found', 404);
     }
   }
 
-  checkRoomExist(roomName) {
-    return this.matchManager.has(roomName);
+  checkRoomExist(gameId) {
+    return this.matchManager.has(gameId);
   }
 }
 
